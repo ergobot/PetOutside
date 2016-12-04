@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "212041207860",
+    "firebase_url": "https://pottytime-429a8.firebaseio.com",
+    "project_id": "pottytime-429a8",
+    "storage_bucket": "pottytime-429a8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212041207860:android:9d7259abb8ecc66a",
+        "android_client_info": {
+          "package_name": "com.pottyware.pottytime"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "212041207860-1q5f85qf4ljgcnim2qptjflj88gi5359.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pottyware.pottytime",
+            "certificate_hash": "EE2C0945F9AAC81638E9BC13877483B5061AE4D4"
+          }
+        },
+        {
+          "client_id": "212041207860-vk0ihishttrpucmjbh3e2et406eoaeg8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABrWDwnK4T4m5AkftDtrczMycf9-9Y1j4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "212041207860-vk0ihishttrpucmjbh3e2et406eoaeg8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

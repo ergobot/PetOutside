@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Pottytime</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="title_activity_potty">PottyActivity</string>
+    <string name="dummy_button">Exit Pottymode</string>
+    <string name="dummy_content">Paw\nfor\nPottytime</string>
+</resources>
