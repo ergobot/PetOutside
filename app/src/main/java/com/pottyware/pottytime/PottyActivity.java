@@ -9,6 +9,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.android.gms.iid.InstanceID;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -94,7 +96,7 @@ public class PottyActivity extends AppCompatActivity {
     // Write a message to the database
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference myRef = database.getReference("pottyevent");
-
+    DatabaseReference mDevicesReference = database.getReference("registereddevices");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,7 +110,12 @@ public class PottyActivity extends AppCompatActivity {
         pottyTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                myRef.setValue("Its potty time!; " + new Date().getTime());
+                String iid = InstanceID.getInstance(getApplicationContext()).getId();
+                String message = "Its potty time!; " + new Date().getTime();
+                String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                Device device = new Device(uid,message);
+                mDevicesReference.child(iid).setValue(device);
+//                myRef.setValue("Its potty time!; " + new Date().getTime());
             }
         });
 
@@ -186,4 +193,5 @@ public class PottyActivity extends AppCompatActivity {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
+
 }

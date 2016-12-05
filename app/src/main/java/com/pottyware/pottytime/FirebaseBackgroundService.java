@@ -9,11 +9,15 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
 
 import static android.content.ContentValues.TAG;
 
@@ -27,6 +31,8 @@ public class FirebaseBackgroundService extends Service {
     // Write a message to the database
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference myRef = database.getReference("pottyevent");
+    DatabaseReference mDevicesReference = database.getReference("registereddevices");
+
 
 
     private ValueEventListener handler;
@@ -36,28 +42,101 @@ public class FirebaseBackgroundService extends Service {
         return null;
     }
 
+    ArrayList<ValueEventListener> deviceListeners = new ArrayList<ValueEventListener>();
+
     @Override
     public void onCreate() {
         super.onCreate();
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            myRef.child("users").child(uid).child("broadcastdevices").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
 
-        // Read from the database
-        myRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                String value = dataSnapshot.getValue(String.class);
-                Log.d(TAG, "Value is: " + value);
-                postNotif(value);
+                    GenericTypeIndicator<ArrayList<Device>> g = new GenericTypeIndicator<ArrayList<Device>>() {
+                        @Override
+                        public String toString() {
+                            return super.toString();
+                        }
+                    };
+                    ArrayList<Device> devices = dataSnapshot.getValue(g);
 
-            }
+                    // remove the listeners
+                    if (deviceListeners != null && deviceListeners.size() > 0) {
+                        for (ValueEventListener oldListener : deviceListeners) {
+                            myRef.removeEventListener(oldListener);
+                        }
+                    }
+                    // create new listeners list
+                    deviceListeners = new ArrayList<ValueEventListener>();
+                    // add listeners
+                    for (Device device : devices) {
+                        ValueEventListener deviceEvent = new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
 
-            @Override
-            public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Log.w(TAG, "Failed to read value.", error.toException());
-            }
-        });
+                                String value = dataSnapshot.getValue(String.class);
+                                Log.d(TAG, "Value is: " + value);
+                                String message = value;
+                                postNotif(message);
+
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        };
+                        deviceListeners.add(deviceEvent);
+                        myRef.addValueEventListener(deviceEvent);
+                        mDevicesReference.child(device.iid).child("device").child("message").addValueEventListener(deviceEvent);
+                    }
+
+
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+
+            myRef.child("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("message").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    // This method is called once with the initial value and again
+                    // whenever data at this location is updated.
+                    String value = dataSnapshot.getValue(String.class);
+                    Log.d(TAG, "Value is: " + value);
+                    postNotif(value);
+
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    // Failed to read value
+                    Log.w(TAG, "Failed to read value.", error.toException());
+                }
+            });
+//        // Read from the database
+//        myRef.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//                // This method is called once with the initial value and again
+//                // whenever data at this location is updated.
+//                String value = dataSnapshot.getValue(String.class);
+//                Log.d(TAG, "Value is: " + value);
+//                postNotif(value);
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError error) {
+//                // Failed to read value
+//                Log.w(TAG, "Failed to read value.", error.toException());
+//            }
+//        });
 
 //        handler = new ValueEventListener() {
 //            @Override
@@ -71,6 +150,7 @@ public class FirebaseBackgroundService extends Service {
 //        };
 //
 //        f.addValueEventListener(handler);
+        }
     }
 
     private void postNotif(String notifString) {
