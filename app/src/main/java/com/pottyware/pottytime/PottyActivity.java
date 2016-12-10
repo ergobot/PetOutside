@@ -113,7 +113,7 @@ public class PottyActivity extends AppCompatActivity {
                 String iid = InstanceID.getInstance(getApplicationContext()).getId();
                 String message = "Its potty time!; " + new Date().getTime();
                 String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                Device device = new Device(uid,message);
+                Device device = new Device(uid,message,iid);
                 mDevicesReference.child(iid).setValue(device);
 //                myRef.setValue("Its potty time!; " + new Date().getTime());
             }

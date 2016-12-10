@@ -25,6 +25,36 @@
         android:layout_marginRight="16dp"
         android:layout_below="@+id/pottymode"
         android:text="History"/>
+<Button
+    android:id="@+id/registerdevice"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    android:layout_below="@+id/history"
+    android:text="Add Device"/>
+
+    <Button
+        android:id="@+id/deletedevice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_below="@+id/registerdevice"
+        android:text="Remove Device"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:id="@+id/deviceid"
+        android:layout_alignParentBottom="true"
+        tools:text="testtest234"
+        android:gravity="center"
+        android:textIsSelectable="true"
+        />
+
 
 
 

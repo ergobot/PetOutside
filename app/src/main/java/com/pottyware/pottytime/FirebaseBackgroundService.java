@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -18,6 +19,7 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import static android.content.ContentValues.TAG;
 
@@ -27,20 +29,27 @@ import static android.content.ContentValues.TAG;
 
 public class FirebaseBackgroundService extends Service {
 
-//    private Firebase f = new Firebase("https://somedemo.firebaseio-demo.com/");
+    //    private Firebase f = new Firebase("https://somedemo.firebaseio-demo.com/");
     // Write a message to the database
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference myRef = database.getReference("pottyevent");
     DatabaseReference mDevicesReference = database.getReference("registereddevices");
 
 
-
     private ValueEventListener handler;
+
+    private final IBinder mBinder = new LocalBinder();
 
     @Override
     public IBinder onBind(Intent arg0) {
-        return null;
+        return mBinder;
     }
+    public class LocalBinder extends Binder {
+        public FirebaseBackgroundService getFirebaseBackgroundServiceInstance(){
+            return FirebaseBackgroundService.this;
+        }
+    }
+
 
     ArrayList<ValueEventListener> deviceListeners = new ArrayList<ValueEventListener>();
 
@@ -49,7 +58,7 @@ public class FirebaseBackgroundService extends Service {
         super.onCreate();
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            myRef.child("users").child(uid).child("broadcastdevices").addValueEventListener(new ValueEventListener() {
+            myRef.child("users").child(uid).child("devices").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
 
@@ -61,35 +70,34 @@ public class FirebaseBackgroundService extends Service {
                     };
                     ArrayList<Device> devices = dataSnapshot.getValue(g);
 
-                    // remove the listeners
-                    if (deviceListeners != null && deviceListeners.size() > 0) {
-                        for (ValueEventListener oldListener : deviceListeners) {
-                            myRef.removeEventListener(oldListener);
-                        }
-                    }
+
+//                    // remove the listeners
+//                    if (deviceListeners != null && deviceListeners.size() > 0) {
+//                        for (ValueEventListener oldListener : deviceListeners) {
+//                            myRef.removeEventListener(oldListener);
+//                        }
+//                    }
                     // create new listeners list
                     deviceListeners = new ArrayList<ValueEventListener>();
                     // add listeners
-                    for (Device device : devices) {
-                        ValueEventListener deviceEvent = new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (devices != null && devices.size() > 0) {
+                        for (Device device : devices) {
+                            ValueEventListener v = mDevicesReference.child(device.iid).child("message").addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    String value = dataSnapshot.getValue(String.class);
+                                    Log.d(TAG, "Value is: " + value);
+                                    String message = value;
+                                    postNotif(message);
+                                }
 
-                                String value = dataSnapshot.getValue(String.class);
-                                Log.d(TAG, "Value is: " + value);
-                                String message = value;
-                                postNotif(message);
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
 
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        };
-                        deviceListeners.add(deviceEvent);
-                        myRef.addValueEventListener(deviceEvent);
-                        mDevicesReference.child(device.iid).child("device").child("message").addValueEventListener(deviceEvent);
+                                }
+                            });
+                            deviceListeners.add(v);
+                        }
                     }
 
 
@@ -102,23 +110,23 @@ public class FirebaseBackgroundService extends Service {
             });
 
 
-            myRef.child("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("message").addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    // This method is called once with the initial value and again
-                    // whenever data at this location is updated.
-                    String value = dataSnapshot.getValue(String.class);
-                    Log.d(TAG, "Value is: " + value);
-                    postNotif(value);
-
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    // Failed to read value
-                    Log.w(TAG, "Failed to read value.", error.toException());
-                }
-            });
+//            myRef.child("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("message").addValueEventListener(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    // This method is called once with the initial value and again
+//                    // whenever data at this location is updated.
+//                    String value = dataSnapshot.getValue(String.class);
+//                    Log.d(TAG, "Value is: " + value);
+//                    postNotif(value);
+//
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError error) {
+//                    // Failed to read value
+//                    Log.w(TAG, "Failed to read value.", error.toException());
+//                }
+//            });
 //        // Read from the database
 //        myRef.addValueEventListener(new ValueEventListener() {
 //            @Override
@@ -161,7 +169,7 @@ public class FirebaseBackgroundService extends Service {
 
         // build notification
         // the addAction re-use the same intent to keep the example short
-        Notification n  = new Notification.Builder(this)
+        Notification n = new Notification.Builder(this)
                 .setContentTitle("Potty Time")
                 .setContentText("Open the door, its potty time")
                 .setSmallIcon(R.drawable.ic_menu_send)
@@ -172,5 +180,29 @@ public class FirebaseBackgroundService extends Service {
         n.flags |= Notification.FLAG_AUTO_CANCEL;
         notificationManager.notify(0, n);
     }
+
+    public void removeAllListeners(){
+
+        // remove the listeners
+        if (deviceListeners != null && deviceListeners.size() > 0) {
+            for (ValueEventListener oldListener : deviceListeners) {
+                mDevicesReference.removeEventListener(oldListener);
+            }
+        }
+    }
+
+//    @Override
+//    public boolean stopService(Intent service){
+//        boolean flag = super.stopService(service);
+//
+//        // remove the listeners
+//        if (deviceListeners != null && deviceListeners.size() > 0) {
+//            for (ValueEventListener oldListener : deviceListeners) {
+//                myRef.removeEventListener(oldListener);
+//            }
+//        }
+//
+//        return flag;
+//    }
 
 }
