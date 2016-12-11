@@ -19,13 +19,11 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 
 import static android.content.ContentValues.TAG;
 
-//import com.firebase.client.DataSnapshot;
-//import com.firebase.client.Firebase;
-//import com.firebase.client.ValueEventListener;
 
 public class FirebaseBackgroundService extends Service {
 
@@ -44,20 +42,23 @@ public class FirebaseBackgroundService extends Service {
     public IBinder onBind(Intent arg0) {
         return mBinder;
     }
+
     public class LocalBinder extends Binder {
-        public FirebaseBackgroundService getFirebaseBackgroundServiceInstance(){
+        public FirebaseBackgroundService getFirebaseBackgroundServiceInstance() {
             return FirebaseBackgroundService.this;
         }
     }
 
 
-    ArrayList<ValueEventListener> deviceListeners = new ArrayList<ValueEventListener>();
+    HashMap<String, ValueEventListener> deviceListeners = new HashMap<>();
+    String uid = "";
+    ArrayList<Device> devices = new ArrayList<Device>();
+    User user;
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+    public void refresh() {
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-            String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
             myRef.child("users").child(uid).child("devices").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
@@ -68,27 +69,35 @@ public class FirebaseBackgroundService extends Service {
                             return super.toString();
                         }
                     };
-                    ArrayList<Device> devices = dataSnapshot.getValue(g);
+                    devices = dataSnapshot.getValue(g);
 
+                    // remove previous listeners
+                    removeAllListeners();
 
-//                    // remove the listeners
-//                    if (deviceListeners != null && deviceListeners.size() > 0) {
-//                        for (ValueEventListener oldListener : deviceListeners) {
-//                            myRef.removeEventListener(oldListener);
-//                        }
-//                    }
-                    // create new listeners list
-                    deviceListeners = new ArrayList<ValueEventListener>();
                     // add listeners
                     if (devices != null && devices.size() > 0) {
-                        for (Device device : devices) {
-                            ValueEventListener v = mDevicesReference.child(device.iid).child("message").addValueEventListener(new ValueEventListener() {
+                        for (int i = 0; i < devices.size(); i++) {
+                            final int index = i;
+                            final Device device = devices.get(i);
+
+
+//                            if(device.delete){
+//                                devices.remove(index);
+//                                myRef.child("users").child(uid).child("devices").setValue(devices);
+//                                mDevicesReference.removeEventListener(deviceListeners.get(i));
+//                                deviceListeners.remove(i);
+//                            }else {
+
+                            ValueEventListener v = mDevicesReference.child(device.iid).child("message").addValueEventListener(new CustomValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
-                                    String value = dataSnapshot.getValue(String.class);
-                                    Log.d(TAG, "Value is: " + value);
-                                    String message = value;
-                                    postNotif(message);
+                                    String message = dataSnapshot.getValue(String.class);
+                                    Log.d(TAG, "Value is: " + message);
+                                    if (initialized) {
+                                        postNotif(message);
+                                    } else {
+                                        initialized = true;
+                                    }
                                 }
 
                                 @Override
@@ -96,12 +105,15 @@ public class FirebaseBackgroundService extends Service {
 
                                 }
                             });
-                            deviceListeners.add(v);
+                            deviceListeners.put(device.iid, v);
+
                         }
+
                     }
-
-
                 }
+
+
+//                }
 
                 @Override
                 public void onCancelled(DatabaseError databaseError) {
@@ -110,55 +122,13 @@ public class FirebaseBackgroundService extends Service {
             });
 
 
-//            myRef.child("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("message").addValueEventListener(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(DataSnapshot dataSnapshot) {
-//                    // This method is called once with the initial value and again
-//                    // whenever data at this location is updated.
-//                    String value = dataSnapshot.getValue(String.class);
-//                    Log.d(TAG, "Value is: " + value);
-//                    postNotif(value);
-//
-//                }
-//
-//                @Override
-//                public void onCancelled(DatabaseError error) {
-//                    // Failed to read value
-//                    Log.w(TAG, "Failed to read value.", error.toException());
-//                }
-//            });
-//        // Read from the database
-//        myRef.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//                // This method is called once with the initial value and again
-//                // whenever data at this location is updated.
-//                String value = dataSnapshot.getValue(String.class);
-//                Log.d(TAG, "Value is: " + value);
-//                postNotif(value);
-//
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError error) {
-//                // Failed to read value
-//                Log.w(TAG, "Failed to read value.", error.toException());
-//            }
-//        });
-
-//        handler = new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot arg0) {
-//                postNotif(arg0.getValue().toString());
-//            }
-//
-//            @Override
-//            public void onCancelled() {
-//            }
-//        };
-//
-//        f.addValueEventListener(handler);
         }
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        refresh();
     }
 
     private void postNotif(String notifString) {
@@ -181,13 +151,14 @@ public class FirebaseBackgroundService extends Service {
         notificationManager.notify(0, n);
     }
 
-    public void removeAllListeners(){
-
+    public void removeAllListeners() {
         // remove the listeners
         if (deviceListeners != null && deviceListeners.size() > 0) {
-            for (ValueEventListener oldListener : deviceListeners) {
-                mDevicesReference.removeEventListener(oldListener);
+            for (Map.Entry<String, ValueEventListener> entry : deviceListeners.entrySet()) {
+                mDevicesReference.child(entry.getKey()).child("message").removeEventListener(entry.getValue());
+
             }
+            deviceListeners.clear();
         }
     }
 

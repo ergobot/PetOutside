@@ -333,17 +333,18 @@ public class MainActivity extends AppCompatActivity {
 
                             for (int i = 0; i < value.devices.size(); i++) {
                                 if (value.devices.get(i).iid.equals(registeredDevice.iid)) {
+//                                    value.devices.get(i).delete = true;
                                     value.devices.remove(i);
                                     mDatabase.child("users").child(uid).setValue(value);
-
+//                                    firebaseBackgroundService.refresh();
                                 }
                             }
 //                            FirebaseBackgroundService firebaseBackgroundService;
                             if(mBound) {
-                                firebaseBackgroundService.removeAllListeners();
+//                                firebaseBackgroundService.removeAllListeners();
                             }
-                            stopService(new Intent(MainActivity.this, FirebaseBackgroundService.class));
-                            startService(new Intent(MainActivity.this, FirebaseBackgroundService.class));
+//                            stopService(new Intent(MainActivity.this, FirebaseBackgroundService.class));
+//                            startService(new Intent(MainActivity.this, FirebaseBackgroundService.class));
                         }
 
 

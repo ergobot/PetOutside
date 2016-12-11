@@ -8,6 +8,7 @@ public class Device {
     public String iid;
     public String uid;
     public String message;
+    public boolean delete;
 
     public Device() {
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
