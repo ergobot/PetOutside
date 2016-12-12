@@ -6,6 +6,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -137,12 +139,17 @@ public class FirebaseBackgroundService extends Service {
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pIntent = PendingIntent.getActivity(this, (int) System.currentTimeMillis(), intent, 0);
 
+        // ringtone
+        Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+
         // build notification
         // the addAction re-use the same intent to keep the example short
         Notification n = new Notification.Builder(this)
                 .setContentTitle("Potty Time")
                 .setContentText("Open the door, its potty time")
                 .setSmallIcon(R.drawable.ic_menu_send)
+                .setSound(alarmSound)
                 .setContentIntent(pIntent)
                 .setAutoCancel(true)
                 .setStyle(new Notification.BigTextStyle().bigText("")).build();

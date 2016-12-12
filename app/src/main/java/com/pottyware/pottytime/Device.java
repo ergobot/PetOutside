@@ -20,4 +20,21 @@ public class Device {
         this.message = message;
     }
 
+    public boolean equals(Device device){
+
+        if(device == null){
+            return false;
+        }
+        if(device.iid == null || device.uid == null){
+            return false;
+        }
+        if(this.iid == null || this.uid == null){
+            return false;
+        }
+        if(device.iid.equals(this.iid) && device.uid.equals(this.uid)){
+            return true;
+        }
+        return false;
+    }
+
 }

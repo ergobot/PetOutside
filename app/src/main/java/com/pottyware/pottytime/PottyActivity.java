@@ -1,6 +1,9 @@
 package com.pottyware.pottytime;
 
 import android.annotation.SuppressLint;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -110,6 +113,16 @@ public class PottyActivity extends AppCompatActivity {
         pottyTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                try {
+                    Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                    Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+                    r.play();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                
+
                 String iid = InstanceID.getInstance(getApplicationContext()).getId();
                 String message = "Its potty time!; " + new Date().getTime();
                 String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();

@@ -20,7 +20,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -84,7 +83,8 @@ public class MainActivity extends AppCompatActivity {
             String iid = InstanceID.getInstance(getApplicationContext()).getId();
             String message = "Its potty time!; " + new Date().getTime();
             Device device = new Device(uid, message, iid);
-            mDevicesReference.child(iid).setValue(device);
+//            mDevicesReference.child(iid).setValue(device);
+            registerDevice(iid,uid,device);
 
         } else {
             returnToLogin();
@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                             public void onInput(MaterialDialog dialog, CharSequence input) {
 
 
-                                registerDevice(String.valueOf(input));
+                                registerDeviceListener(String.valueOf(input));
 
                             }
                         }).show();
@@ -174,6 +174,38 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    public void registerDevice(final String iid, final String uid, final Device device){
+
+
+        mDevicesReference.child(device.iid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                if(dataSnapshot.exists()){
+                    Device value = dataSnapshot.getValue(Device.class);
+                    Log.d(TAG, "Value is: " + value);
+
+                    if(!value.equals(device)){
+                        mDevicesReference.child(iid).setValue(device);
+                    }
+                }else{
+                    mDevicesReference.child(iid).setValue(device);
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+
+
+    }
+
+
 
     @Override
     protected void onStart() {
@@ -252,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(loginIntent);
     }
 
-    private void registerDevice(final String device) {
+    private void registerDeviceListener(final String device) {
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             // Name, email address, and profile photo Url
