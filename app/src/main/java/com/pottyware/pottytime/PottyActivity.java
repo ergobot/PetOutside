@@ -1,9 +1,14 @@
 package com.pottyware.pottytime;
 
 import android.annotation.SuppressLint;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.IBinder;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +21,7 @@ import com.google.android.gms.iid.InstanceID;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Logger;
 
 import java.util.Date;
 
@@ -24,6 +30,8 @@ import java.util.Date;
  * status bar and navigation/system bar) with user interaction.
  */
 public class PottyActivity extends AppCompatActivity {
+
+
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -101,12 +109,16 @@ public class PottyActivity extends AppCompatActivity {
     DatabaseReference myRef = database.getReference("pottyevent");
     DatabaseReference mDevicesReference = database.getReference("registereddevices");
 
+    FirebaseBackgroundService firebaseBackgroundService;
+    boolean mBound = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_potty);
 
+        setContentView(R.layout.activity_potty);
+//        FirebaseDatabase.getInstance().setLogLevel(Logger.Level.DEBUG);
         mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         pottyTime = (Button)findViewById(R.id.pottytime);
@@ -116,8 +128,14 @@ public class PottyActivity extends AppCompatActivity {
 
                 try {
                     Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
                     Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+                    if(r.isPlaying()){
+                        r.stop();
+                    }
                     r.play();
+                    r.stop();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -128,7 +146,11 @@ public class PottyActivity extends AppCompatActivity {
                 String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 Device device = new Device(uid,message,iid);
                 mDevicesReference.child(iid).setValue(device);
-//                myRef.setValue("Its potty time!; " + new Date().getTime());
+//                if(mBound){
+//                    firebaseBackgroundService.postNotif("Hello !!!");
+//                }
+
+
             }
         });
 
@@ -206,5 +228,42 @@ public class PottyActivity extends AppCompatActivity {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Bind to LocalService
+        Intent intent = new Intent(this, FirebaseBackgroundService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Unbind from the service
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
+    }
+
+    /** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            FirebaseBackgroundService.LocalBinder binder = (FirebaseBackgroundService.LocalBinder) service;
+            firebaseBackgroundService = binder.getFirebaseBackgroundServiceInstance();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
 
 }

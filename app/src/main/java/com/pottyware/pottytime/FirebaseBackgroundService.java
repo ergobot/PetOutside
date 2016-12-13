@@ -18,6 +18,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
+import com.google.firebase.database.Logger;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class FirebaseBackgroundService extends Service {
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference myRef = database.getReference("pottyevent");
     DatabaseReference mDevicesReference = database.getReference("registereddevices");
+
 
 
     private ValueEventListener handler;
@@ -58,6 +60,7 @@ public class FirebaseBackgroundService extends Service {
     User user;
 
     public void refresh() {
+
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
@@ -133,7 +136,7 @@ public class FirebaseBackgroundService extends Service {
         refresh();
     }
 
-    private void postNotif(String notifString) {
+    public void postNotif(String notifString) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         Intent intent = new Intent(this, MainActivity.class);
@@ -156,6 +159,10 @@ public class FirebaseBackgroundService extends Service {
         //  .addAction(R.drawable.line, "", pIntent).build();
         n.flags |= Notification.FLAG_AUTO_CANCEL;
         notificationManager.notify(0, n);
+
+
+
+
     }
 
     public void removeAllListeners() {
